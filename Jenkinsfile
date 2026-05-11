@@ -1,79 +1,82 @@
 pipeline {
     agent {
         node {
-            label 'ANIL'
-        }
+            label 'roboshop' 
+        } 
     }
-    environment{
+    environment {
         COURSE = "Jenkins"
     }
-     options {
+    options {
         disableConcurrentBuilds()
+        timeout(time: 5, unit: 'MINUTES')
     }
-     parameters {
+    parameters {
         string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
-
         text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
-
-        booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
-
+        booleanParam(name: 'DEPLOY', defaultValue: false, description: 'Toggle this value')
         choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
-
         password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
     }
-    stages{
-        stage('Build'){
+    stages {
+        stage('Build') {
+            steps {
+                script{
+                    sh """
+                        echo "Building"
+                        echo $COURSE
+                        sleep 10
+                    """
+                }
+            }
+        }
+        stage('Test') {
             steps {
                script{
                     sh """
-                        echo "building"
-                        echo $COURSE
-                    """
-               }
-            }
-        }
-
-        stage('test'){
-            steps{
-                script{
-                    sh """
-                        echo "Test"
-                        echo "test1"
+                        echo "Testing"
                         echo "Hello ${params.PERSON}"
-
                         echo "Biography: ${params.BIOGRAPHY}"
-
                         echo "Toggle: ${params.TOGGLE}"
-
-                        echo "Choice: ${params.CHOICE}"
-
+                        echo "Choice: ${params.DEPLOY}" 
                         echo "Password: ${params.PASSWORD}"
-
                     """
                 }
             }
         }
-
         stage('Deploy') {
-            steps{
+            when {
+                expression { "${params.DEPLOY}" == "true" }
+            }
+
+            input {
+                message "Should we continue?"
+                ok "Yes, we should."
+                submitter "alice,bob"
+                parameters {
+                    string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+                }
+            }
+            steps {
                 script{
                     sh """
-                        echo "Deploy
-                    """         
+                        echo "Deploying"
+                    """
                 }
             }
         }
     }
-    // post build 
-    post {
-        always {
-            echo "I will always say hello again"
+
+    // post build
+    post { 
+        always { 
+            echo 'I will always say Hello again!'
         }
         success {
             echo "pipeline success"
         }
         failure {
-            echo "pipeline failure "
+            echo "pipeline failure"
         }
     }
 }
